@@ -404,35 +404,75 @@ docker network ls | grep elastic
 
  
 
+#### Obtaining the Docker Image
+
 ```bash
+# Pull the specific Elasticsearch version
+sudo docker pull docker.elastic.co/elasticsearch/elasticsearch:7.6.2
 
-# Make script executable (if needed)
-
-chmod +x START_ES
-
- 
-
-# Start Elasticsearch (runs in foreground - keep terminal open)
-
-./START_ES
-
+# Verify the image was downloaded
+sudo docker images | grep elasticsearch
 ```
 
- 
+#### Running Elasticsearch in Background
+
+You have two options for running Elasticsearch in the background:
+
+**Option A: Using Docker Detached Mode**
+```bash
+# Run container in detached mode (-d flag)
+sudo docker run -d \
+  --name es01 \
+  --net elastic \
+  -p 9200:9200 \
+  -p 9300:9300 \
+  -m 1GB \
+  -e "xpack.ml.max_machine_memory_percent=20" \
+  -e "discovery.type=single-node" \
+  docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+
+# Check if container is running
+sudo docker ps | grep es01
+
+# View logs
+sudo docker logs -f es01
+```
+
+**Option B: Using Screen**
+```bash
+# Install screen if not available
+sudo apt-get install screen
+
+# Start a screen session
+screen -S elasticsearch
+
+# Within the screen session, run START_ES or the docker command
+./START_ES
+# OR
+sudo docker run --name es01 --net elastic -p 9200:9200 -it -m 1GB \
+  -e "xpack.ml.max_machine_memory_percent=20" \
+  -e "discovery.type=single-node" \
+  docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+
+# Detach from screen: Press Ctrl+A, then D
+
+# Reattach to screen session later
+screen -r elasticsearch
+
+# List all screen sessions
+screen -ls
+
+# Kill screen session when done
+screen -X -S elasticsearch quit
+```
 
 **What you'll see**:
-
 - Container download progress (first time only)
-
 - Elasticsearch startup logs
-
 - Messages about template loading and index creation
-
 - Eventually: "Node started" message
 
- 
-
-**Leave this terminal running** - Elasticsearch logs will continue to show.
+**For background mode**: Use `docker logs -f es01` to view logs anytime.
 
  
 
@@ -691,3 +731,5 @@ The default setup loses data when containers restart. To make data persistent:
  
 
 ### Create Persistent Elasticsearch
+
+Section to be added soon 
