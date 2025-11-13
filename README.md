@@ -600,128 +600,285 @@ chmod +x START_KIBANA
 
 ## Setting Up Web Service with Tomcat
 
- 
+### Understanding the Deployment Structure
 
-### Deploy ClaimLinker Web Application
+** Important Note**: The standard Maven WAR packaging does not work correctly for this project as described in the [original GitHub documentation](https://github.com/malvag/ClaimLinker). Based on our working setup, here's how to properly deploy ClaimLinker.
 
- 
+### Actual Working Deployment Structure
 
+The ClaimLinker application should be deployed to `/opt/tomcat/webapps/claims/` with the following structure:
+```
+/opt/tomcat/webapps/claims/
+├── ClaimLinker.jsp
+├── ClaimLinker_web/
+│   ├── ClaimLinker_web.iml
+│   ├── META-INF/
+│   ├── loading.gif
+│   ├── pom.xml
+│   ├── resource/
+│   ├── src/
+│   ├── target/
+│   └── web/
+├── ClaimLinker_web-1.0.jar
+├── META-INF/
+│   └── application.xml
+├── WEB-INF/
+│   ├── classes/
+│   ├── data/
+│   ├── lib/
+│   └── web.xml
+├── bookmarklet.js
+├── index.html
+├── loading.gif
+└── resource/
+    ├── css/
+    └── js/
+```
+
+### Deploying ClaimLinker
+
+#### Step 1: Build the Project
 ```bash
+# Navigate to ClaimLinker directory
+cd /home/methodshub/ClaimLinker
 
-# Start Tomcat using the correct path and user
-
-sudo -u tomcat /opt/tomcat/bin/startup.sh
-
- 
-
-# Check Tomcat status
-
-curl -I http://localhost:8080
-
- 
-
-# Build WAR file (if not already built)
-
+# Build the project
 mvn clean package
 
- 
+# Verify build was successful
+ls -la ClaimLinker_web/target/
+```
 
-# Deploy to Tomcat
+#### Step 2: Deploy to Tomcat
+```bash
+# Create the deployment directory
+sudo mkdir -p /opt/tomcat/webapps/claims
 
-sudo cp ClaimLinker_web/target/ClaimLinker_web-1.0.war /opt/tomcat/webapps/claimlinker.war
+# Copy all necessary files to the deployment directory
+# Copy JSP files and web resources from project root
+sudo cp ClaimLinker_web/web/ClaimLinker.jsp /opt/tomcat/webapps/claims/
+sudo cp ClaimLinker_web/web/index.html /opt/tomcat/webapps/claims/
+sudo cp ClaimLinker_web/web/bookmarklet.js /opt/tomcat/webapps/claims/
+sudo cp ClaimLinker_web/web/loading.gif /opt/tomcat/webapps/claims/
 
- 
+# Copy the entire ClaimLinker_web directory
+sudo cp -r ClaimLinker_web /opt/tomcat/webapps/claims/
 
-# Restart Tomcat to deploy
+# Copy the built JAR file
+sudo cp ClaimLinker_web/target/ClaimLinker_web-1.0.jar /opt/tomcat/webapps/claims/
 
+# Copy WEB-INF directory with compiled classes and configuration
+sudo cp -r ClaimLinker_web/target/ClaimLinker_web-1.0/WEB-INF /opt/tomcat/webapps/claims/
+
+# Copy META-INF directory
+sudo cp -r ClaimLinker_web/target/ClaimLinker_web-1.0/META-INF /opt/tomcat/webapps/claims/
+
+# Copy resource directory (CSS, JS, etc.)
+sudo cp -r ClaimLinker_web/web/resource /opt/tomcat/webapps/claims/
+```
+
+#### Step 3: Set Proper Permissions
+```bash
+# Set ownership to tomcat user
+sudo chown -R tomcat:tomcat /opt/tomcat/webapps/claims
+
+# Verify the structure
+ls -la /opt/tomcat/webapps/claims/
+ls -la /opt/tomcat/webapps/claims/WEB-INF/
+ls -la /opt/tomcat/webapps/claims/META-INF/
+ls -la /opt/tomcat/webapps/claims/resource/
+```
+
+#### Step 4: Start/Restart Tomcat
+```bash
+# If Tomcat is running, restart it
 sudo -u tomcat /opt/tomcat/bin/shutdown.sh
-
 sleep 5
-
 sudo -u tomcat /opt/tomcat/bin/startup.sh
 
- 
+# If Tomcat is not running, just start it
+sudo -u tomcat /opt/tomcat/bin/startup.sh
 
-# Wait for deployment (30-60 seconds)
-
+# Wait for deployment
 sleep 60
 
+# Check Tomcat logs for any errors
+sudo tail -f /opt/tomcat/logs/catalina.out
 ```
 
- 
-
-### Test Web Service
-
- 
-
+### Verify Deployment
 ```bash
+# Check if all files are in place
+ls -la /opt/tomcat/webapps/claims/ClaimLinker.jsp
+ls -la /opt/tomcat/webapps/claims/WEB-INF/web.xml
+ls -la /opt/tomcat/webapps/claims/WEB-INF/classes/
+ls -la /opt/tomcat/webapps/claims/WEB-INF/lib/
 
-# Test basic endpoint
-
-curl "http://localhost:8080/claimlinker"
-
- 
-
-# Test with sample query
-
-curl "http://localhost:8080/claimlinker?app=service&text=vaccine%20safety"
-
- 
-
-# Test with political claim
-
-curl "http://localhost:8080/claimlinker?app=service&text=Interest%20on%20debt%20will%20exceed%20secur…
-
+# Verify data directory exists in WEB-INF
+ls -la /opt/tomcat/webapps/claims/WEB-INF/data/
 ```
 
- 
+### Test the Web Application
+```bash
+# Test the main page
+curl -I "http://localhost:8080/claims/"
 
-**Expected Response Format**:
+# Test the JSP page
+curl -I "http://localhost:8080/claims/ClaimLinker.jsp"
 
+# Test the API endpoint
+curl "http://localhost:8080/claims/claimlinker?app=service&text=vaccine%20safety"
+
+# Alternative: Test using the ClaimLinker servlet directly
+curl "http://localhost:8080/claims/ClaimLinker?app=service&text=vaccine%20safety"
+```
+
+**Note**: The application is accessible at `/claims/` not `/claimlinker/` as the directory name is `claims`.
+
+### Access the Web Interface
+
+Open your browser and navigate to:
+- **Main page**: http://localhost:8080/claims/
+- **ClaimLinker form**: http://localhost:8080/claims/ClaimLinker.jsp
+- **API endpoint**: http://localhost:8080/claims/claimlinker?app=service&text=YOUR_TEXT
+
+### Expected Response Format
 ```json
-
 {
-
   "_results": [{
-
     "text": "vaccine safety",
-
     "sentencePosition": 0,
-
     "association_type": "same_as",
-
     "linkedClaims": [
-
       {
-
         "claimReview_claimReviewed": "Vaccines are safe and effective",
-
         "_score": 45.2,
-
         "extra_title": "Fact check title",
-
         "rating_alternateName": "true",
-
         "creativeWork_author_name": "Fact checker name",
-
         "claimReview_url": "https://factcheck.url",
-
         "claim_uri": "http://data.gesis.org/claimskg/creative_work/id"
-
       }
-
     ]
-
   }],
-
   "timeElapsed": 1200
-
 }
-
 ```
 
- 
+### Common Deployment Issues
 
+#### Issue 1: Files Not Found
+```bash
+# If you get 404 errors, verify file locations in the source
+find ClaimLinker_web -name "ClaimLinker.jsp"
+find ClaimLinker_web -name "index.html"
+find ClaimLinker_web -name "web.xml"
+
+# Adjust copy commands based on actual locations
+```
+
+#### Issue 2: ClassNotFoundException
+```bash
+# Ensure all JARs are in WEB-INF/lib
+ls -la /opt/tomcat/webapps/claims/WEB-INF/lib/
+
+# Check if classes are compiled
+ls -la /opt/tomcat/webapps/claims/WEB-INF/classes/csd/claimlinker/
+```
+
+#### Issue 3: Data Files Not Found
+```bash
+# Verify data files are accessible to the application
+ls -la /opt/tomcat/webapps/claims/WEB-INF/data/
+
+# If missing, copy them from the project
+sudo cp -r data/* /opt/tomcat/webapps/claims/WEB-INF/data/
+sudo chown -R tomcat:tomcat /opt/tomcat/webapps/claims/WEB-INF/data/
+```
+
+### Troubleshooting Web Service
+```bash
+# Check Tomcat logs for errors
+sudo tail -100 /opt/tomcat/logs/catalina.out
+
+# Check for any deployment errors
+sudo grep -i error /opt/tomcat/logs/catalina.out
+
+# Check application-specific logs
+sudo tail -100 /opt/tomcat/logs/localhost.*.log
+
+# Verify Tomcat is running
+ps aux | grep tomcat
+
+# Check if port 8080 is listening
+sudo netstat -tlnp | grep 8080
+
+# Test Tomcat manager (if available)
+curl http://localhost:8080/
+
+# Restart Tomcat if needed
+sudo -u tomcat /opt/tomcat/bin/shutdown.sh
+sleep 5
+sudo -u tomcat /opt/tomcat/bin/startup.sh
+```
+
+### Simplified Deployment Script
+
+For easier redeployment, you can create a script:
+```bash
+# Create deploy script
+cat > deploy_claimlinker.sh << 'EOF'
+#!/bin/bash
+
+echo "Building ClaimLinker..."
+cd /home/methodshub/ClaimLinker
+mvn clean package
+
+echo "Stopping Tomcat..."
+sudo -u tomcat /opt/tomcat/bin/shutdown.sh
+sleep 5
+
+echo "Cleaning old deployment..."
+sudo rm -rf /opt/tomcat/webapps/claims/*
+
+echo "Deploying new version..."
+sudo mkdir -p /opt/tomcat/webapps/claims
+
+# Copy web files
+sudo cp ClaimLinker_web/web/ClaimLinker.jsp /opt/tomcat/webapps/claims/
+sudo cp ClaimLinker_web/web/index.html /opt/tomcat/webapps/claims/
+sudo cp ClaimLinker_web/web/bookmarklet.js /opt/tomcat/webapps/claims/
+sudo cp ClaimLinker_web/web/loading.gif /opt/tomcat/webapps/claims/
+
+# Copy directories
+sudo cp -r ClaimLinker_web /opt/tomcat/webapps/claims/
+sudo cp ClaimLinker_web/target/ClaimLinker_web-1.0.jar /opt/tomcat/webapps/claims/
+sudo cp -r ClaimLinker_web/target/ClaimLinker_web-1.0/WEB-INF /opt/tomcat/webapps/claims/
+sudo cp -r ClaimLinker_web/target/ClaimLinker_web-1.0/META-INF /opt/tomcat/webapps/claims/
+sudo cp -r ClaimLinker_web/web/resource /opt/tomcat/webapps/claims/
+
+# Set permissions
+sudo chown -R tomcat:tomcat /opt/tomcat/webapps/claims
+
+echo "Starting Tomcat..."
+sudo -u tomcat /opt/tomcat/bin/startup.sh
+
+echo "Deployment complete! Waiting for startup..."
+sleep 60
+
+echo "Testing deployment..."
+curl -I "http://localhost:8080/claims/"
+
+echo "Done!"
+EOF
+
+chmod +x deploy_claimlinker.sh
+```
+
+Run the script with:
+```bash
+./deploy_claimlinker.sh
+```
 ## Making Data Persistent
 
  
