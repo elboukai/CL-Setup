@@ -823,4 +823,9 @@ Run the script with:
 2. Currently, the index is built inside of the elasticsearch container - the index is lost upon removing the container. Therefore, after creating a new elasticsearch container, make sure to call the BUILD_INDEX script again. Alternatively, use a docker file and specify a data path in order to create and use a persistent index. 
 3. When the webservice is down, restart tomcat using ```sudo -u tomcat /opt/tomcat/bin/startup.sh```. No need to rebuild the index. 
 
+## Changing / Adding Features to the Web Service
+When adding features to the web service, make sure to adjust all relevant components. For example, if you want the claims' dates to be displayed along with their texts in the search results, you need to 
+1. check whether the date is indexed in elasticsearch. Otherwise add it (ElasticInitializer.java in **ElasticSearch_Tools**) and rebuild the index.
+2. check whether the date is part of the claim model. Otherwise add it (model/Claim.java in **ClaimLinker_commons**).
+3. adjust the page displaying the search results (ClaimLinker.jsp in **Claimlinker_web**)
 
