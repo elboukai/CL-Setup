@@ -6,7 +6,7 @@
 
  
 
-ClaimLinker is a Web service and API that links arbitrary text to fact-checked claims from ClaimsKG database. This guide provides step-by-step instructions for setting up ClaimLinker on our internal server environment.
+ClaimLinker is a Web service and API that links arbitrary text to fact-checked claims from ClaimsKG database. This guide provides step-by-step instructions for setting up ClaimLinker on our internal server environment, extending the [original ClaimLinker repository's documentation](https://git.gesis.org/bolandka/claimlinking_claimlinker).
 
  
 
@@ -16,17 +16,23 @@ ClaimLinker is a Web service and API that links arbitrary text to fact-checked c
 
 ## System Architecture
 
- 
+![ClaimLinker Overview](claimlinker-architecture.png)
+Image source: [ClaimLinker Demo Slides](https://users.ics.forth.gr/~fafalios/files/ppts/ClaimLinker_TheWebConf2021_Slides.pdf)
+ClaimLinker operates in two stages: 
+1. **Pre-processing**: Indexing claim data
+2. **Real Time Claim Linking**: Retrieving similar claims
+
+
 
 ClaimLinker consists of three main components:
 
  
 
-1. **ClaimLinker_commons**: Core library with NLP processing and similarity algorithms
+1. **ClaimLinker_commons**: Core library with NLP processing and similarity algorithms (backend)
 
-2. **ClaimLinker_web**: Web services and user interfaces  
+2. **ClaimLinker_web**: Web services and user interfaces (frontend)
 
-3. **ElasticSearch_Tools**: Data indexing and search functionality
+3. **ElasticSearch_Tools**: Data indexing and search functionality (backend)
 
  
 
@@ -222,163 +228,10 @@ If any files are missing, obtain them from the original ClaimLinker repository o
 
  
 
-## Startup Scripts Explanation
+## Setup for ClaimLinker's Pre-processing Stage
+The following steps set up and run Elasticsearch in a Docker Network.
 
- 
 
-The repository includes four startup scripts that automate the setup process:
-
- 
-
-### START_ES - Elasticsearch Container
-
-**Purpose**: Starts Elasticsearch 7.6.2 in Docker container
-
- 
-
-**What it does**:
-
-```bash
-
-sudo docker run --name es01 --net elastic -p 9200:9200 -it -m 1GB \
-
-  -e "xpack.ml.max_machine_memory_percent=20" \
-
-  -e "discovery.type=single-node" \
-
-  docker.elastic.co/elasticsearch/elasticsearch:7.6.2
-
-```
-
- 
-
-**Explanation**:
-
-- Creates container named `es01` on `elastic` network
-
-- Maps port 9200 for API access
-
-- Limits memory to 1GB with ML features using max 20%
-
-- Runs in single-node mode (no clustering)
-
-- Runs in foreground (you'll see logs continuously)
-
- 
-
-### START_INDEX - Data Loading
-
-**Purpose**: Loads fact-checked claims into Elasticsearch
-
- 
-
-**What it does**:
-
-```bash
-
-java -Xmx2048m -cp \
-
-.:ClaimLinker_commons/target/ClaimLinker_commons-1.0-jar-with-dependencies.jar:\
-
-ClaimLinker_web/target/ClaimLinker_web-1.0.jar:\
-
-ElasticSearch_Tools/target/ElasticSearch_Tools-1.0.jar: \
-
-csd.claimlinker.es.ElasticInitializer \
-
--f data/claim_extraction_18_10_2019_annotated.csv \
-
--h localhost
-
-```
-
- 
-
-**Explanation**:
-
-- Allocates 2GB heap memory for processing large CSV
-
-- Sets up Java classpath with all required JARs
-
-- Runs ElasticInitializer to parse CSV and index claims
-
-- Connects to Elasticsearch on localhost:9200
-
-- Creates `claims` index with proper mappings
-
- 
-
-### START_DEMO - Test Application
-
-**Purpose**: Runs demonstration of ClaimLinker functionality
-
- 
-
-**What it does**:
-
-```bash
-
-java -Xmx2048m -cp \
-
-.:ClaimLinker_commons/target/ClaimLinker_commons-1.0-jar-with-dependencies.jar:\
-
-ClaimLinker_web/target/ClaimLinker_web-1.0.jar:\
-
-ElasticSearch_Tools/target/ElasticSearch_Tools-1.0.jar: \
-
-csd.claimlinker.ClaimLinkerTest
-
-```
-
- 
-
-**Explanation**:
-
-- Runs ClaimLinkerTest class with sample text
-
-- Demonstrates all similarity measures working together
-
-- Shows example output format and scoring
-
-- Useful for testing that everything is working
-
- 
-
-### START_KIBANA - Data Visualization
-
-**Purpose**: Starts Kibana for exploring indexed claims
-
- 
-
-**What it does**:
-
-```bash
-
-sudo docker run --name kib01 --net elastic -p 5601:5601 \
-
-  -e "ELASTICSEARCH_HOSTS=http://es01:9200" \
-
-  docker.elastic.co/kibana/kibana:7.6.2
-
-```
-
- 
-
-**Explanation**:
-
-- Creates Kibana container connected to Elasticsearch
-
-- Maps port 5601 for web interface access
-
-- Automatically connects to the es01 container
-
-- Provides web UI for data exploration and visualization
-
- 
-
-## Complete Setup Process
-
- 
 
 ### Step 1: Prepare Docker Network
 
@@ -474,6 +327,12 @@ screen -X -S elasticsearch quit
 
 **For background mode**: Use `docker logs -f es01` to view logs anytime.
 
+**Explanation**:
+
+- Creates container named `es01` on `elastic` network
+- Maps port 9200 for API access
+- Limits memory to 1GB with ML features using max 20%
+- Runs in single-node mode (no clustering)
  
 
 ### Step 3: Load Claims Data
@@ -504,11 +363,27 @@ curl http://localhost:9200/_cluster/health?pretty
 
  
 
-# Load the claims data
+# Load the claims data unsing the startup script or using the full command
 
 chmod +x START_INDEX
 
 ./START_INDEX
+
+# OR
+
+java -Xmx2048m -cp \
+
+.:ClaimLinker_commons/target/ClaimLinker_commons-1.0-jar-with-dependencies.jar:\
+
+ClaimLinker_web/target/ClaimLinker_web-1.0.jar:\
+
+ElasticSearch_Tools/target/ElasticSearch_Tools-1.0.jar: \
+
+csd.claimlinker.es.ElasticInitializer \
+
+-f data/claim_extraction_18_10_2019_annotated.csv \
+
+-h localhost
 
 ```
 
@@ -523,6 +398,20 @@ chmod +x START_INDEX
 - Bulk indexing operations
 
 - Success message when complete
+
+
+
+**Explanation**:
+
+- Allocates 2GB heap memory for processing large CSV files
+
+- Sets up Java classpath with all required JARs
+
+- Runs ElasticInitializer to parse CSV and index claims
+
+- Connects to Elasticsearch on localhost:9200
+
+- Creates `claims` index with proper mappings
 
  
 
@@ -548,11 +437,24 @@ curl "localhost:9200/claims/_count?pretty"
 
 ```bash
 
-# Run the demonstration
+# Run the demonstration using the script or the full command
 
 chmod +x START_DEMO
 
 ./START_DEMO
+
+# OR
+
+java -Xmx2048m -cp \
+
+.:ClaimLinker_commons/target/ClaimLinker_commons-1.0-jar-with-dependencies.jar:\
+
+ClaimLinker_web/target/ClaimLinker_web-1.0.jar:\
+
+ElasticSearch_Tools/target/ElasticSearch_Tools-1.0.jar: \
+
+csd.claimlinker.ClaimLinkerTest
+
 
 ```
 
@@ -568,21 +470,55 @@ chmod +x START_DEMO
 
 - Execution time
 
+
+
+**Explanation**:
+
+- Runs ClaimLinkerTest class with sample text
+
+- Demonstrates all similarity measures working together
+
+- Shows example output format and scoring
+
+- Useful for testing that everything is working at the backend-side of ClaimLinker
+
+
  
 
 ### Step 5: Start Kibana (Optional)
 
- 
+ **Purpose**: Starts Kibana for exploring indexed claims. This step is not required, it is for debugging purposes only
 
 ```bash
 
-# Start Kibana for data exploration
+# Start Kibana for data exploration using the script or the full command
 
 chmod +x START_KIBANA
 
 ./START_KIBANA
 
+# OR
+
+sudo docker run --name kib01 --net elastic -p 5601:5601 \
+
+  -e "ELASTICSEARCH_HOSTS=http://es01:9200" \
+
+  docker.elastic.co/kibana/kibana:7.6.2
+
 ```
+
+
+
+**Explanation**:
+
+- Creates Kibana container connected to Elasticsearch
+
+- Maps port 5601 for web interface access
+
+- Automatically connects to the es01 container
+
+- Provides web UI for data exploration and visualization
+
 
  
 
@@ -599,6 +535,7 @@ chmod +x START_KIBANA
  
 
 ## Setting Up Web Service with Tomcat
+Deploying ClaimLinker's frontend
 
 ### Understanding the Deployment Structure
 
@@ -879,14 +816,16 @@ Run the script with:
 ```bash
 ./deploy_claimlinker.sh
 ```
-## Making Data Persistent
 
- 
 
-The default setup loses data when containers restart. To make data persistent:
+## Maintaining the Web Service
+1. When restarting the system: make sure the docker network and elasticsearch container are up and running. Restart, if required, following the steps detailed in the Setup for ClaimLinker's Pre-processing Stage section.
+2. Currently, the index is built inside of the elasticsearch container - the index is lost upon removing the container. Therefore, after creating a new elasticsearch container, make sure to call the BUILD_INDEX script again. Alternatively, use a docker file and specify a data path in order to create and use a persistent index. 
+3. When the webservice is down, restart tomcat using ```sudo -u tomcat /opt/tomcat/bin/startup.sh```. No need to rebuild the index. 
 
- 
+## Changing / Adding Features to the Web Service
+When adding features to the web service, make sure to adjust all relevant components. For example, if you want the claims' dates to be displayed along with their texts in the search results, you need to 
+1. check whether the date is indexed in elasticsearch. Otherwise add it (ElasticInitializer.java in **ElasticSearch_Tools**) and rebuild the index.
+2. check whether the date is part of the claim model. Otherwise add it (model/Claim.java in **ClaimLinker_commons**).
+3. adjust the page displaying the search results (ClaimLinker.jsp in **Claimlinker_web**)
 
-### Create Persistent Elasticsearch
-
-Section to be added soon 
