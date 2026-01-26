@@ -229,7 +229,7 @@ If any files are missing, obtain them from the original ClaimLinker repository o
  
 
 ## Setup for ClaimLinker's Pre-processing Stage
-Setting up Elasticsearch in a Docker Network
+The following steps set up and run Elasticsearch in a Docker Network.
 
 
 
@@ -535,6 +535,7 @@ sudo docker run --name kib01 --net elastic -p 5601:5601 \
  
 
 ## Setting Up Web Service with Tomcat
+Deploying ClaimLinker's frontend
 
 ### Understanding the Deployment Structure
 
@@ -815,14 +816,11 @@ Run the script with:
 ```bash
 ./deploy_claimlinker.sh
 ```
-## Making Data Persistent
 
- 
 
-The default setup loses data when containers restart. To make data persistent:
+## Maintaining the Web Service
+1. When restarting the system: make sure the docker network and elasticsearch container are up and running. Restart, if required, following the steps detailed in the Setup for ClaimLinker's Pre-processing Stage section.
+2. Currently, the index is built inside of the elasticsearch container - the index is lost upon removing the container. Therefore, after creating a new elasticsearch container, make sure to call the BUILD_INDEX script again. Alternatively, use a docker file and specify a data path in order to create and use a persistent index. 
+3. When the webservice is down, restart tomcat using ```sudo -u tomcat /opt/tomcat/bin/startup.sh```. No need to rebuild the index. 
 
- 
 
-### Create Persistent Elasticsearch
-
-Section to be added soon 
