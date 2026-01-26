@@ -16,17 +16,23 @@ ClaimLinker is a Web service and API that links arbitrary text to fact-checked c
 
 ## System Architecture
 
- 
+![ClaimLinker Overview](claimlinker-architecture.png)
+Image source: [ClaimLinker Demo Slides](https://users.ics.forth.gr/~fafalios/files/ppts/ClaimLinker_TheWebConf2021_Slides.pdf)
+ClaimLinker operates in two stages: 
+1. **Pre-processing**: Indexing claim data
+2. **Real Time Claim Linking**: Retrieving similar claims
+
+
 
 ClaimLinker consists of three main components:
 
  
 
-1. **ClaimLinker_commons**: Core library with NLP processing and similarity algorithms
+1. **ClaimLinker_commons**: Core library with NLP processing and similarity algorithms (backend)
 
-2. **ClaimLinker_web**: Web services and user interfaces  
+2. **ClaimLinker_web**: Web services and user interfaces (frontend)
 
-3. **ElasticSearch_Tools**: Data indexing and search functionality
+3. **ElasticSearch_Tools**: Data indexing and search functionality (backend)
 
  
 
@@ -222,7 +228,7 @@ If any files are missing, obtain them from the original ClaimLinker repository o
 
  
 
-## Startup Scripts Explanation
+## Startup Scripts for ClaimLinker's Pre-processing Stage
 
  
 
@@ -296,7 +302,7 @@ csd.claimlinker.es.ElasticInitializer \
 
 **Explanation**:
 
-- Allocates 2GB heap memory for processing large CSV
+- Allocates 2GB heap memory for processing large CSV files
 
 - Sets up Java classpath with all required JARs
 
@@ -340,13 +346,13 @@ csd.claimlinker.ClaimLinkerTest
 
 - Shows example output format and scoring
 
-- Useful for testing that everything is working
+- Useful for testing that everything is working at the backend-side of ClaimLinker
 
  
 
-### START_KIBANA - Data Visualization
+### START_KIBANA - Data Visualization (Optional)
 
-**Purpose**: Starts Kibana for exploring indexed claims
+**Purpose**: Starts Kibana for exploring indexed claims. This step is not required, it is for debugging purposes only
 
  
 
@@ -376,7 +382,7 @@ sudo docker run --name kib01 --net elastic -p 5601:5601 \
 
  
 
-## Complete Setup Process
+## Complete Setup Process for the Pre-Processing Stage
 
  
 
