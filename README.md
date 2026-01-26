@@ -6,7 +6,7 @@
 
  
 
-ClaimLinker is a Web service and API that links arbitrary text to fact-checked claims from ClaimsKG database. This guide provides step-by-step instructions for setting up ClaimLinker on our internal server environment.
+ClaimLinker is a Web service and API that links arbitrary text to fact-checked claims from ClaimsKG database. This guide provides step-by-step instructions for setting up ClaimLinker on our internal server environment, extending the [original ClaimLinker repository's documentation](https://git.gesis.org/bolandka/claimlinking_claimlinker).
 
  
 
