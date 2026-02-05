@@ -733,6 +733,16 @@ sudo cp -r data/* /opt/tomcat/webapps/claims/WEB-INF/data/
 sudo chown -R tomcat:tomcat /opt/tomcat/webapps/claims/WEB-INF/data/
 ```
 
+#### Issue 4: Bookmarklet Not Working
+You may need to set the correct server name in ClaimLinker_web/web/ClaimLinker.jsp, i.e. 
+```bash
+# Old entry
+http://139.91.183.92/claimlinker/viaBookmarklet
+# New entry, e.g.
+<yourServer>:<port>/claims/claimlinker/viaBookmarklet
+```
+
+
 ### Troubleshooting Web Service
 ```bash
 # Check Tomcat logs for errors
