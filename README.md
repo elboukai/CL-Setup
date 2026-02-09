@@ -6,7 +6,7 @@
 
  
 
-ClaimLinker is a Web service and API that links arbitrary text to fact-checked claims from ClaimsKG database. This guide provides step-by-step instructions for setting up ClaimLinker on our internal server environment, extending the [original ClaimLinker repository's documentation](https://git.gesis.org/bolandka/claimlinking_claimlinker).
+ClaimLinker is a Web service and API that links arbitrary text to fact-checked claims from ClaimsKG database. This guide provides step-by-step instructions for setting up ClaimLinker on our internal server environment, extending the [original ClaimLinker repository's documentation](https://github.com/bolandka/ClaimLinker).
 
  
 
@@ -539,7 +539,7 @@ Deploying ClaimLinker's frontend
 
 ### Understanding the Deployment Structure
 
-** Important Note**: The standard Maven WAR packaging does not work correctly for this project as described in the [original GitHub documentation](https://github.com/malvag/ClaimLinker). Based on our working setup, here's how to properly deploy ClaimLinker.
+** Important Note**: The standard Maven WAR packaging does not work correctly for this project as described in the [original GitHub documentation](https://github.com/bolandka/ClaimLinker). Based on our working setup, here's how to properly deploy ClaimLinker.
 
 ### Actual Working Deployment Structure
 
